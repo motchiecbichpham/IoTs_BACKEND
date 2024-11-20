@@ -1,4 +1,3 @@
-const http = require("http");
 const express = require("express");
 const cors = require("cors");
 const { Server } = require("socket.io");
@@ -8,20 +7,28 @@ const app = express();
 const houseRoutes = require("./src/api/house.route");
 const environmentRoutes = require("./src/api/environmentfactors.route");
 
+app.use(
+  cors({
+    origin: "http://localhost:4200",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+
 app.use(express.json());
 app.use("/api/houses", houseRoutes);
-
 app.use("/api/environmental-data", environmentRoutes);
 
 const httpServer = createServer(app);
+
 const io = new Server(httpServer, {
   cors: {
     origin: "http://localhost:4200",
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   },
 });
 
-app.use(cors);
 app.set("io", io);
 
 io.on("connection", (socket) => {
@@ -38,7 +45,7 @@ app.get("/", (req, res) => {
 const startServer = async () => {
   try {
     const PORT = 8132;
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       console.log("Server running at http://localhost:8132/");
     });
   } catch (error) {
