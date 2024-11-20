@@ -6,9 +6,12 @@ const { createServer } = require("http");
 
 const app = express();
 const houseRoutes = require("./src/api/house.route");
+const environmentRoutes = require("./src/api/environmentfactors.route");
 
 app.use(express.json());
 app.use("/api/houses", houseRoutes);
+
+app.use("/api/environmentData", environmentRoutes);
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
