@@ -11,7 +11,7 @@ const environmentRoutes = require("./src/api/environmentfactors.route");
 app.use(express.json());
 app.use("/api/houses", houseRoutes);
 
-app.use("/api/environmentData", environmentRoutes);
+app.use("/api/environmental-data", environmentRoutes);
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {

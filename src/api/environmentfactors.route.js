@@ -19,25 +19,25 @@ router.get("/", async (req, res) => {
 router.get("/daily", async (req, res) => {
   try {
     const db = await connectDB();
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    const today = new Date(yesterday);
-    today.setDate(today.getDate() + 1);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
 
     const pipeline = [
       {
         $match: {
           timestamp: {
-            $gte: yesterday,
-            $lt: today,
+            $gte: today,
+            $lt: tomorrow,
           },
         },
       },
       {
         $project: {
           hour: { $hour: "$timestamp" },
+          date: { $dateToString: { format: "%Y-%m-%d", date: "$timestamp" } },
           temperature: 1,
           eco2: 1,
         },
