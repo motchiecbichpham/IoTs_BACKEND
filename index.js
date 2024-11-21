@@ -4,8 +4,8 @@ const { Server } = require("socket.io");
 const { createServer } = require("http");
 
 const app = express();
-const houseRoutes = require("./src/api/house.route");
 const environmentRoutes = require("./src/api/environmentfactors.route");
+const houseCollectionRoutes = require("./src/api/houses.route");
 
 app.use(
   cors({
@@ -16,8 +16,8 @@ app.use(
 );
 
 app.use(express.json());
-app.use("/api/houses", houseRoutes);
 app.use("/api/environmental-data", environmentRoutes);
+app.use("/api/houseCollection", houseCollectionRoutes);
 
 const httpServer = createServer(app);
 
@@ -44,9 +44,9 @@ app.get("/", (req, res) => {
 
 const startServer = async () => {
   try {
-    const PORT = 8132;
+    const PORT = 8080;
     httpServer.listen(PORT, () => {
-      console.log("Server running at http://localhost:8132/");
+      console.log("Server running at http://localhost:8080/");
     });
   } catch (error) {
     console.error("Server startup error:", error);
