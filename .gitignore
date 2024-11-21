@@ -14,6 +14,7 @@ pids
 # Dependency directories
 node_modules/
 
+
 # Build output
 dist/
 build/
@@ -24,6 +25,8 @@ build/
 # IDE/Editor settings
 .vscode/
 .idea/
+.mypy_cache
+.ropeproject
 *.swp
 
 # Operating system files
