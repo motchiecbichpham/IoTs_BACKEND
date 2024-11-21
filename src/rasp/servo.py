@@ -1,71 +1,50 @@
-from pymongo import MongoClient
-import serial
-import datetime
 import time
-import RPi.GPIO as GPIO
-PortRF = serial.Serial('/dev/ttyAMA0',9600)
-
+import paho.mqtt.client as mqtt
+from gpiozero import AngularServo
+from time  import sleep
+import serial
+import time
+import paho.mqtt.client as mqtt
+import subprocess
+from pymongo import MongoClient
+signalPIN = 2
+status=False
 client = MongoClient('mongodb://etu-web2.ut-capitole.fr:27017/')
 db = client.db_straberry
 collections = db.list_collection_names()
 houses_db = db.HousesCollection
-houses = houses_db.find()
 
-house_id = ""
+#servo = AngularServo(signalPIN, min_angle=0, max_angle=180, min_pulse_width=0.0005, max_pulse_width=0.0024)
+def on_message(client, data, message):
+        global status
+        value = float(message.payload.decode('utf-8'))
+        #servo = AngularServo(signalPIN, min_angle=0, max_angle=180, min_pulse_width=0.0005, max_pulse_width=0.0024)
+        if value < 400 and status == True:
+                servo = AngularServo(signalPIN, min_angle=0, max_angle=180, min_pulse_width=0.0005, max_pulse_width=0.0024)
+                servo.angle = 180
+                sleep(1)
+                servo.angle = 0
+                sleep(1)
+                status = False
+                houses_db.update_many({},'$set': { "isAirFilterOn": False } )
+        elif value > 400 and status == False:
+                servo = AngularServo(signalPIN, min_angle=0, max_angle=180, min_pulse_width=0.0005, max_pulse_width=0.0024)
+                servo.angle = 0
+                sleep(1)
+                servo.angle = 180
+                sleep(1)
+                status = True
+                houses_db.update_many({},'$set': { "isAirFilterOn": True } )
 
-PAUSE = 0.5
-GPIO.setmode(GPIO.BOARD)
 
-ports = [36,38,16,40]
+PortRF = serial.Serial('/dev/ttyAMA0',9600)
 
-for port in ports:
-    GPIO.setup(port, GPIO.OUT)
-    GPIO.output(port, GPIO.LOW)
 
-def get_card_id():
-  while True:
-        ID = ""
-        print('wait')
-        read_byte = PortRF.read(1)
-        if read_byte==b"\x02":
-          for _ in range(0,12):
-            read_byte=PortRF.read()
-            ID += read_byte.decode('utf-8')
-        if ID:
-          return ID
-
-def find_house(house_id):
-  house = houses_db.find_one({ "authorizedCard.cardId": house_id})
-  return house
-
-def light_up(house):
-  port = house['port']
-  houses_db.find_one_and_update({'_id': house['_id']},{ '$set': { "lastUsed" : datetime.datetime.now(), "isOccupied": True} })
-  GPIO.output(port, GPIO.HIGH)
-def light_off(house):
-  port = house['port']
-  houses_db.find_one_and_update({'_id': house['_id']},{ '$set': { "lastUsed" : datetime.datetime.now(), "isOccupied": False} })
-  GPIO.output(port, GPIO.LOW)
-def main():
-  while True:
-    house_id =""
-    print("Start scanning\n")
-
-    print("Scan the house card: ")
-    house_id = get_card_id()
-
-    print("House finding")
-    time.sleep(PAUSE)
-    house = find_house(house_id=house_id)
-    time.sleep(4 * PAUSE)
-    if house:
-      if house['isOccupied']:
-        light_off(house)
-      else:
-        light_up(house)
-      print(house)
-    else:
-      print("House not found")
-  GPIO.cleanup()
-
-main()
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+client.connect('10.12.220.101', 1883, 60)
+client.on_message = on_message
+client.subscribe('2IS/Straberry', qos=0)
+client.loop_start()
+time.sleep(1000000)
+client.loop_stop()
+client.disconnect()

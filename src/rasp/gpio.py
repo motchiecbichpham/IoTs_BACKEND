@@ -9,7 +9,7 @@ client = MongoClient('mongodb://etu-web2.ut-capitole.fr:27017/')
 db = client.db_straberry
 collections = db.list_collection_names()
 houses_db = db.HousesCollection
-houses = houses_db.find()
+
 
 house_id = ""
 
