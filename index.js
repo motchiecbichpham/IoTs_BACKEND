@@ -44,9 +44,9 @@ app.get("/", (req, res) => {
 
 const startServer = async () => {
   try {
-    const PORT = 8080;
+    const PORT = 8089;
     httpServer.listen(PORT, () => {
-      console.log("Server running at http://localhost:8080/");
+      console.log("Server running at http://localhost:8089/");
     });
   } catch (error) {
     console.error("Server startup error:", error);

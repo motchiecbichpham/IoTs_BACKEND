@@ -46,12 +46,15 @@ router.post("/login", async (req, res) => {
         houseName: house.houseName,
         isOccupied: house.isOccupied,
         lastUsed: house.lastUsed,
+        isAirFilterOn: house.isAirFilterOn
+
       },
     });
   } catch (error) {
     res.status(500).json({ error: "cannot connect" });
   }
 });
+
 
 router.get("/", async (req, res) => {
   try {
