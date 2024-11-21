@@ -46,15 +46,12 @@ router.post("/login", async (req, res) => {
         houseName: house.houseName,
         isOccupied: house.isOccupied,
         lastUsed: house.lastUsed,
-        isAirFilterOn: house.isAirFilterOn
-
       },
     });
   } catch (error) {
     res.status(500).json({ error: "cannot connect" });
   }
 });
-
 
 router.get("/", async (req, res) => {
   try {
@@ -65,26 +62,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-// router.get('/:houseName', async (req, res) => {
-//     try {
-//         const token = req.header('x-auth-token');
-
-//         const searchedHouse = jwt.verify(token, config.JWT_SECRET)
-//         const db = await connectDB();
-//         const house = await db.collection("HousesCollection").findOne({
-//             houseName: req.params.houseName
-//         });
-
-//         if (!house) {
-//             return res.status(404).json({ error: 'House not found' });
-//         }
-//         res.json(searchedHouse);
-
-//     } catch (error) {
-//         res.status(500).json({ error: error.message });
-//     }
-// });
 
 router.get("/:houseName", auth, async (req, res) => {
   try {

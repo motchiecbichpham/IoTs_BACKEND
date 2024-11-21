@@ -6,6 +6,8 @@ const { createServer } = require("http");
 const app = express();
 const environmentRoutes = require("./src/api/environmentfactors.route");
 const houseCollectionRoutes = require("./src/api/houses.route");
+const fetchSolarData = require("./src/api/fetchSolarData");
+const storeSolarData = require("./src/api/storeSolarData");
 
 app.use(
   cors({
@@ -37,6 +39,15 @@ io.on("connection", (socket) => {
     console.log("Client disconnected");
   });
 });
+
+setInterval(async () => {
+  try {
+    const data = await fetchSolarData();
+    await storeSolarData(data);
+  } catch (error) {
+    console.log("Error during data fetching and storing process:", error);
+  }
+}, 10 * 1000);
 
 app.get("/", (req, res) => {
   res.send("Hello world ");
