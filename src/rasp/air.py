@@ -3,6 +3,21 @@ from aq import AQ
 import pygame
 import time
 from gtts import gTTS
+from aq import AQ
+from gpiozero import AngularServo
+from time  import sleep
+import serial
+import pymongo
+from pymongo import MongoClient
+import datetime
+import paho.mqtt.publish as publish
+
+MQTT_PATH = "2IS/Straberry"
+MQTT_SERVER = "10.12.220.101"
+PortRF = serial.Serial('/dev/ttyAMA0', 9600)
+client = MongoClient('mongodb://etu-web2.ut-capitole.fr:27017/')
+db = client.db_straberry
+
 pygame.init()
 
 def generate_sound(text, lang):
@@ -15,32 +30,34 @@ def play_sound():
   pygame.mixer.music.play()
   while pygame.mixer.music.get_busy() == True:
      continue
-   
-def air_filter(eco2, temp_c):
-    print('air_filter')
-    
+
 def alert_speaker(eco2):
-    if(eco2>40000):
-      generate_sound("Highest level of air pollution","en")
-    elif(eco2>5000):
-      generate_sound("4 level of air pollution","en")
-    elif(eco2>2000):
-      generate_sound("3 level of air pollution","en")
-    elif(eco2>1000):
-      generate_sound("2 level of air pollution","en")
-    else: 
-      return
+    publish.single(MQTT_PATH, eco2, hostname=MQTT_SERVER)
+    if eco2 < 600:
+      generate_sound("Everything is good.","en")
+    elif eco2>40000:
+      generate_sound("Warning: Hazardous air quality detected. Avoid outdoor activity.Air pollution levels are dangerously high. Stay indoors!","en")
+    elif eco2>5000:
+      generate_sound("Severe air pollution. Use protective masks if going outside.","en")
+    elif eco2>2000:
+      generate_sound("Poor air quality detected. Consider reducing outdoor activities.","en")
+    elif eco2>=600:
+      generate_sound("Air quality is slightly degraded. Sensitive groups should take precautions.","en")
+
     play_sound()
-    
+
 def log_record(temp_c, eco2):
     print(temp_c, eco2)
+    db.EnvironmentalHistory.insert_one(
+      {"timestamp": datetime.datetime.now(),
+          "temperature": temp_c,
+          "eco2": eco2})
 
 def log_reading(aq):
     temp_c = str(aq.get_temp())
     eco2 = str(int(aq.get_eco2()))
-    log_record(temp_c=temp_c, eco2=eco2)
-    alert_speaker(eco2=eco2)
-    air_filter(eco2=eco2, temp_c=temp_c)
+    log_record(temp_c=float(temp_c), eco2=float(eco2))
+    alert_speaker(eco2=float(eco2))
     print(f"{time.monotonic()}\t{temp_c}\t{str(int(eco2))}")
 
 def main():
@@ -55,14 +72,11 @@ def main():
 
     try:
         while True:
+            #log_reading(aq)
             current_time = time.localtime()
-            
-            # Log at even hours (2am, 4am, 6am, ...)
             if current_time.tm_min == 0 and current_time.tm_sec == 0:
-                if current_time.tm_hour % 2 == 0 and current_time.tm_hour != last_calibration_hour:
+                 if current_time.tm_hour != last_calibration_hour:
                     log_reading(aq)
-                    
-                    # Reset calibration at midnight
                     if current_time.tm_hour == 0:
                         print("Resetting calibration")
                         aq.calibrate_400()
@@ -70,8 +84,7 @@ def main():
                     else:
                         last_calibration_hour = current_time.tm_hour
 
-            # Add a small delay to prevent CPU overuse
-            time.sleep(1000)
+            time.sleep(60*60)
 
     except KeyboardInterrupt:
         current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
