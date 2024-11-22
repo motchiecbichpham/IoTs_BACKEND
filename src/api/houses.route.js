@@ -53,7 +53,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get("/houses", async (req, res) => {
   try {
     const db = await connectDB();
     const houses = await db.collection("HousesCollection").find({}).toArray();

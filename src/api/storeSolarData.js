@@ -1,20 +1,18 @@
 const { connectDB } = require("../utils/db");
 
-// Function to store fetched solar data into MongoDB
 const storeSolarData = async (data) => {
   try {
     const db = await connectDB();
     const housesCollection = db.collection("HousesCollection");
 
     const { timestamp, production } = data;
-
     const currentHour = timestamp.getHours();
 
     let houseName;
     if (currentHour >= 0 && currentHour < 6) {
       houseName = "GreenHouse";
     } else if (currentHour >= 6 && currentHour < 12) {
-      houseName = "BlueHouse";
+      houseName = "RedHouse";
     } else if (currentHour >= 12 && currentHour < 18) {
       houseName = "YellowHouse";
     } else {
@@ -24,19 +22,19 @@ const storeSolarData = async (data) => {
     const house = await housesCollection.findOne({ houseName });
 
     if (house) {
-      const energySource = house.isOccupied ? "energyUsed" : "energySaved";
-
       const update = {
-        $inc: { [energySource]: production },
+        $push: {
+          ...(house.isOccupied
+            ? { energyUsed: { timestamp, production } }
+            : { energySaved: { timestamp, production } }),
+        },
         $set: { lastUpdated: timestamp },
       };
 
       const result = await housesCollection.updateOne({ houseName }, update);
 
       if (result.modifiedCount > 0) {
-        console.log(
-          `Updated ${houseName} with ${energySource} += ${production}`,
-        );
+        console.log(`Updated ${houseName} with energy data.`);
       } else {
         console.log(`No update made for ${houseName}`);
       }

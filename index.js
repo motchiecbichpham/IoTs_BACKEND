@@ -19,7 +19,7 @@ app.use(
 
 app.use(express.json());
 app.use("/api/environmental-data", environmentRoutes);
-app.use("/api/houseCollection", houseCollectionRoutes);
+app.use("/api/", houseCollectionRoutes);
 
 const httpServer = createServer(app);
 
@@ -40,14 +40,17 @@ io.on("connection", (socket) => {
   });
 });
 
-setInterval(async () => {
-  try {
-    const data = await fetchSolarData();
-    await storeSolarData(data);
-  } catch (error) {
-    console.log("Error during data fetching and storing process:", error);
-  }
-}, 10 * 1000);
+setInterval(
+  async () => {
+    try {
+      const data = await fetchSolarData();
+      await storeSolarData(data);
+    } catch (error) {
+      console.log("Error during data fetching and storing process:", error);
+    }
+  },
+  10 * 60 * 1000,
+);
 
 app.get("/", (req, res) => {
   res.send("Hello world ");
@@ -55,9 +58,9 @@ app.get("/", (req, res) => {
 
 const startServer = async () => {
   try {
-    const PORT = 8089;
+    const PORT = 8083;
     httpServer.listen(PORT, () => {
-      console.log("Server running at http://localhost:8089/");
+      console.log("Server running at http://localhost:8083/");
     });
   } catch (error) {
     console.error("Server startup error:", error);
