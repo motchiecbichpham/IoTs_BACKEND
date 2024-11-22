@@ -2,12 +2,11 @@ const express = require("express");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const { createServer } = require("http");
+const solarService = require("./src/services/solarService");
 
 const app = express();
-const environmentRoutes = require("./src/api/environmentfactors.route");
-const houseRoutes = require("./src/api/houses.route");
-const fetchSolarData = require("./src/api/fetchSolarData");
-const storeSolarData = require("./src/api/storeSolarData");
+const environmentRoutes = require("./src/routes/environmentRoute");
+const houseRoutes = require("./src/routes/houseRoute");
 
 app.use(
   cors({
@@ -41,13 +40,14 @@ io.on("connection", (socket) => {
 });
 
 setInterval(async () => {
+
   try {
-    const data = await fetchSolarData();
-    await storeSolarData(data);
+    const data = await solarService.fetchSolarData();
+    await solarService.storeSolarData(data);
   } catch (error) {
     console.log("Error during data fetching and storing process:", error);
   }
-}, 10 * 60 * 1000);
+}, 10*60 *1000);
 
 app.get("/", (req, res) => {
   res.send("Hello world ");
@@ -55,9 +55,9 @@ app.get("/", (req, res) => {
 
 const startServer = async () => {
   try {
-    const PORT = 8083;
+    const PORT = 8081;
     httpServer.listen(PORT, () => {
-      console.log("Server running at http://localhost:8083/");
+      console.log("Server running at http://localhost:8081/");
     });
   } catch (error) {
     console.error("Server startup error:", error);

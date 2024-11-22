@@ -54,7 +54,7 @@ class SolarService {
     }
   }
 
-  fetchSolarData = async () => {
+  async fetchSolarData () {
     try {
       const response = await axios.get(
         "https://labadenquet.pythonanywhere.com/production"
