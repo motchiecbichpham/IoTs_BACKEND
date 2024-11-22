@@ -5,7 +5,7 @@ const { createServer } = require("http");
 
 const app = express();
 const environmentRoutes = require("./src/api/environmentfactors.route");
-const houseCollectionRoutes = require("./src/api/houses.route");
+const houseRoutes = require("./src/api/houses.route");
 const fetchSolarData = require("./src/api/fetchSolarData");
 const storeSolarData = require("./src/api/storeSolarData");
 
@@ -14,12 +14,12 @@ app.use(
     origin: "http://localhost:4200",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  }),
+  })
 );
 
 app.use(express.json());
 app.use("/api/environmental-data", environmentRoutes);
-app.use("/api/", houseCollectionRoutes);
+app.use("/api", houseRoutes);
 
 const httpServer = createServer(app);
 
@@ -40,17 +40,14 @@ io.on("connection", (socket) => {
   });
 });
 
-setInterval(
-  async () => {
-    try {
-      const data = await fetchSolarData();
-      await storeSolarData(data);
-    } catch (error) {
-      console.log("Error during data fetching and storing process:", error);
-    }
-  },
-  10 * 60 * 1000,
-);
+setInterval(async () => {
+  try {
+    const data = await fetchSolarData();
+    await storeSolarData(data);
+  } catch (error) {
+    console.log("Error during data fetching and storing process:", error);
+  }
+}, 10 * 60 * 1000);
 
 app.get("/", (req, res) => {
   res.send("Hello world ");
