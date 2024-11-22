@@ -74,3 +74,12 @@ def main():
   GPIO.cleanup()
 
 main()
+
+ssh pi 10.12.220.110
+air quality
+in pi_aq
+project.py
+
+ssh pi 10.12.220.120
+leds project_test
+servo hihi2
