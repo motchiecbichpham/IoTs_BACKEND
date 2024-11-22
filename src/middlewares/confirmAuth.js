@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const config = require("../utils/config");
 
 const authenticateHouse = async (req, res, next) => {
-  const token = req.header("x-auth-token");
+  const token = req.header("Authorization").split(" ")[1]||'';
   if (!token) return res.status(401).json({ error: "Please authenticate" });
 
   try {

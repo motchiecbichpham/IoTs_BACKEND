@@ -1,56 +1,96 @@
-const houseService = require("../services/houseService");
+const HouseService = require('../services/houseService');
+const jwt = require('jsonwebtoken');
+const config = require('../utils/config');
 
-exports.loginHouse = async (req, res) => {
-  const { houseName, cardId } = req.body;
-  try {
-    const result = await houseService.loginHouse(houseName, cardId);
-    return res.status(200).json(result);
-  } catch (error) {
-    return res.status(error.status || 500).json({ message: error.message });
-  }
-};
+class HouseController {
+  static async login(req, res) {
+    const { houseName, cardId } = req.body;
 
-exports.getAllHouses = async (req, res) => {
-  try {
-    const houses = await houseService.getAllHouses();
-    res.json(houses);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-exports.getHouseByName = async (req, res) => {
-  try {
-    const { houseName } = req.params;
-    if (req.user.houseName !== houseName) {
-      return res.status(403).json({ error: "Unauthorized: House name mismatch" });
+    try {
+      if (!houseName || !cardId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Required both fields'
+        });
+      }
+
+      const house = await HouseService.findHouseByCredentials(houseName, cardId);
+
+      if (!house) {
+        return res.status(401).json({
+          message: 'Invalid house credentials'
+        });
+      }
+
+      const token = await HouseService.generateToken(house);
+
+      return res.status(200).json({
+        success: true,
+        token,
+        house: {
+          houseName: house.houseName,
+          isOccupied: house.isOccupied,
+          lastUsed: house.lastUsed
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Cannot connect' });
     }
-
-    const house = await findHouseByName(houseName);
-    if (!house) {
-      return res.status(404).json({ error: "House not found" });
-    }
-
-    res.json(house);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
   }
-};
 
-exports.useCard = async (req, res) => {
-  try {
-    const { cardId } = req.body;
-    const updatedHouse = await toggleHouseOccupancy(cardId);
-
-    if (!updatedHouse) {
-      return res.status(400).json({ error: "Failed to update house status" });
+  static async getAllHouses(req, res) {
+    try {
+      const houses = await HouseService.getAllHouses();
+      res.json(houses);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
+  }
 
-    res.json({
-      message: `House is now ${updatedHouse.isOccupied ? "occupied" : "vacant"}`,
-      house: updatedHouse,
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  static async getHouseByName(req, res) {
+    try {
+      const token = req.header("Authorization").split(" ")[1] ||'';
+
+      const decoded = jwt.verify(token, config.JWT_SECRET);
+      // if (decoded.houseName !== req.params.houseName) {
+      //   return res.status(403).json({ error: 'Unauthorized: House name mismatch' });
+      // }
+
+      const house = await HouseService.findHouseByName(decoded.houseName);
+
+      if (!house) {
+        return res.status(404).json({ error: 'House not found' });
+      }
+
+      res.json(house);
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        return res.status(401).json({ error: 'Token expired' });
+      } else if (error.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: 'Invalid token' });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async useCard(req, res) {
+    try {
+      const { cardId } = req.body;
+
+      const updatedHouse = await HouseService.toggleHouseOccupancy(cardId);
+
+      if (!updatedHouse) {
+        return res.status(404).json({ error: 'Invalid card' });
+      }
+
+      res.json({
+        message: `House is now ${updatedHouse.isOccupied ? 'occupied' : 'vacant'}`,
+        house: updatedHouse
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   }
 }
-// Other controller methods similarly implemented
+
+module.exports = HouseController;
