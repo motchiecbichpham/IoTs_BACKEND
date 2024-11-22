@@ -4,7 +4,6 @@ from gpiozero import AngularServo
 from time  import sleep
 import serial
 import time
-import paho.mqtt.client as mqtt
 import subprocess
 from pymongo import MongoClient
 signalPIN = 2
@@ -26,7 +25,7 @@ def on_message(client, data, message):
                 servo.angle = 0
                 sleep(1)
                 status = False
-                houses_db.update_many({},'$set': { "isAirFilterOn": False } )
+                houses_db.update_many({"hasAirFilter": True},{"$set":{"isAirFilterOn": False}})
         elif value > 400 and status == False:
                 servo = AngularServo(signalPIN, min_angle=0, max_angle=180, min_pulse_width=0.0005, max_pulse_width=0.0024)
                 servo.angle = 0
@@ -34,9 +33,7 @@ def on_message(client, data, message):
                 servo.angle = 180
                 sleep(1)
                 status = True
-                houses_db.update_many({},'$set': { "isAirFilterOn": True } )
-
-
+                houses_db.update_many({"isOccupied": True, "hasAirFilter": True},{"$set":{"isAirFilterOn": True}})
 PortRF = serial.Serial('/dev/ttyAMA0',9600)
 
 

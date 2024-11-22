@@ -33,7 +33,7 @@ def play_sound():
 
 def alert_speaker(eco2):
     publish.single(MQTT_PATH, eco2, hostname=MQTT_SERVER)
-    if eco2 < 600:
+    if eco2 < 400:
       generate_sound("Everything is good.","en")
     elif eco2>40000:
       generate_sound("Warning: Hazardous air quality detected. Avoid outdoor activity.Air pollution levels are dangerously high. Stay indoors!","en")
@@ -41,7 +41,7 @@ def alert_speaker(eco2):
       generate_sound("Severe air pollution. Use protective masks if going outside.","en")
     elif eco2>2000:
       generate_sound("Poor air quality detected. Consider reducing outdoor activities.","en")
-    elif eco2>=600:
+    elif eco2>=400:
       generate_sound("Air quality is slightly degraded. Sensitive groups should take precautions.","en")
 
     play_sound()
@@ -72,19 +72,19 @@ def main():
 
     try:
         while True:
-            #log_reading(aq)
             current_time = time.localtime()
-            if current_time.tm_min == 0 and current_time.tm_sec == 0:
-                 if current_time.tm_hour != last_calibration_hour:
-                    log_reading(aq)
-                    if current_time.tm_hour == 0:
-                        print("Resetting calibration")
-                        aq.calibrate_400()
-                        last_calibration_hour = 0
-                    else:
-                        last_calibration_hour = current_time.tm_hour
+            log_reading(aq)
+            #if current_time.tm_min == 0 and current_time.tm_sec == 0:
+            if current_time.tm_hour != last_calibration_hour:
+                 log_reading(aq)
+                 if current_time.tm_hour == 0:
+                     print("Resetting calibration")
+                     aq.calibrate_400()
+                     last_calibration_hour = 0
+                 else:
+                     last_calibration_hour = current_time.tm_hour
 
-            time.sleep(60*60)
+            time.sleep(10*60)
 
     except KeyboardInterrupt:
         current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
